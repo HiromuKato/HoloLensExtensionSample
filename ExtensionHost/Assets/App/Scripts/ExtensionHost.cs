@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 #if WINDOWS_UWP
@@ -20,22 +18,18 @@ namespace HoloLensExtensionSample
 
         void Start()
         {
-            /*
-            UnityEngine.WSA.Application.InvokeOnAppThread(() =>
-            {
-            }, true);
-            */
-
 #if WINDOWS_UWP
             try
             {
-                //var dispatcher = CoreWindow.GetForCurrentThread().Dispatcher;
-                var dispatcher = Windows.ApplicationModel.Core.CoreApplication.GetCurrentView().CoreWindow.Dispatcher;
+                Windows.ApplicationModel.Core.CoreApplicationView mainView = Windows.ApplicationModel.Core.CoreApplication.MainView;
+                Windows.UI.Core.CoreWindow cw = mainView.CoreWindow;
+                Windows.UI.Core.CoreDispatcher dispatcher = cw.Dispatcher;
+
                 ExtensionManager.Initialize(dispatcher);
             }
             catch (Exception ex)
             {
-                Debug.Log(ex.Message);
+                Debug.Log("Exception: " + ex.Message);
             }
 #endif
         }
@@ -47,26 +41,35 @@ namespace HoloLensExtensionSample
         {
             Debug.Log("Button Tapped");
 #if WINDOWS_UWP
-            ValueSet message = new ValueSet();
-            message.Add("arg1", 2);
-            message.Add("arg2", 3);
-
-            //Extension ext = btn.DataContext as Extension;
+            // インストールされている拡張名を表示
             foreach (var e in ExtensionManager.Extensions)
             {
                 Debug.Log(e.AppExtension.DisplayName);
             }
 
-            Extension ext = ExtensionManager.Extensions[0];
-            double result = await ext.Invoke(message);
-            Debug.Log(result.ToString());
+            // 2と3を拡張機能に送る
+            ValueSet message = new ValueSet();
+            message.Add("arg1", 2);
+            message.Add("arg2", 3);
 
-            textMesh.text = result.ToString();
-
-            if (result.ToString().Equals("NaN"))
+            try
             {
-                ext.Disable();
-                await ext.Enable();
+                // テストとして最初に見つかった拡張機能を実行
+                Extension ext = ExtensionManager.Extensions[0];
+                double result = await ext.Invoke(message);
+                Debug.Log(result.ToString());
+
+                textMesh.text = result.ToString();
+
+                if (result.ToString().Equals("NaN"))
+                {
+                    // 拡張機能の実行に失敗したときのエラー処理
+                    Debug.Log(result.ToString());
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.Log(ex.Message);
             }
 #endif
         }

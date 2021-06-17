@@ -48,7 +48,7 @@
         <uap3:Extension Category="windows.appExtension">
           <uap3:AppExtension Name="Sample.com.MathExt" Id="multiply" DisplayName="x*y" Description="Exponent" PublicFolder="Public">
             <uap3:Properties>
-              <Service>com.microsoft.multiplyservice</Service>
+              <Service>com.sample.multiplyservice</Service>
             </uap3:Properties>
           </uap3:AppExtension>
         </uap3:Extension>

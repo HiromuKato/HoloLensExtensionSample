@@ -88,7 +88,7 @@ namespace HoloLensExtensionSample
         /// </summary>
         public async void FindAndLoadExtensions()
         {
-            Debug.WriteLine("FindAndLoadExtensions");
+            UnityEngine.Debug.Log("FindAndLoadExtensions");
 
             #region Error Checking
             // Run on the UI thread because the Extensions Tab UI updates as extensions are added or removed
@@ -112,7 +112,7 @@ namespace HoloLensExtensionSample
         /// <param name="args">Contains the package that was installed</param>
         private async void Catalog_PackageInstalled(AppExtensionCatalog sender, AppExtensionPackageInstalledEventArgs args)
         {
-            Debug.WriteLine("Catalog_PackageInstalled");
+            UnityEngine.Debug.Log("Catalog_PackageInstalled");
 
             // Run on the UI thread because the Extensions Tab UI updates as extensions are added or removed
             await _dispatcher.RunAsync(CoreDispatcherPriority.Normal, async () =>
@@ -131,7 +131,7 @@ namespace HoloLensExtensionSample
         /// <param name="args">Contains the package that was updated</param>
         private async void Catalog_PackageUpdated(AppExtensionCatalog sender, AppExtensionPackageUpdatedEventArgs args)
         {
-            Debug.WriteLine("Catalog_PackageUpdated");
+            UnityEngine.Debug.Log("Catalog_PackageUpdated");
 
             // Run on the UI thread because the Extensions Tab UI updates as extensions are added or removed
             await _dispatcher.RunAsync(CoreDispatcherPriority.Normal, async () =>
@@ -150,7 +150,7 @@ namespace HoloLensExtensionSample
         /// <param name="args">Contains the package that is updating</param>
         private async void Catalog_PackageUpdating(AppExtensionCatalog sender, AppExtensionPackageUpdatingEventArgs args)
         {
-            Debug.WriteLine("Catalog_PackageUpdating");
+            UnityEngine.Debug.Log("Catalog_PackageUpdating");
 
             await UnloadExtensions(args.Package);
         }
@@ -162,7 +162,7 @@ namespace HoloLensExtensionSample
         /// <param name="args">Contains the package that is uninstalling</param>
         private async void Catalog_PackageUninstalling(AppExtensionCatalog sender, AppExtensionPackageUninstallingEventArgs args)
         {
-            Debug.WriteLine("Catalog_PackageUninstalling");
+            UnityEngine.Debug.Log("Catalog_PackageUninstalling");
 
             await RemoveExtensions(args.Package);
         }
@@ -175,7 +175,7 @@ namespace HoloLensExtensionSample
         /// <param name="args">Contains the package that has changed status</param>
         private async void Catalog_PackageStatusChanged(AppExtensionCatalog sender, AppExtensionPackageStatusChangedEventArgs args)
         {
-            Debug.WriteLine("Catalog_PackageStatusChanged");
+            UnityEngine.Debug.Log("Catalog_PackageStatusChanged");
 
             if (!args.Package.Status.VerifyIsOK()) // If the package isn't ok, unload its extensions
             {
@@ -208,7 +208,7 @@ namespace HoloLensExtensionSample
         /// <returns></returns>
         public async Task LoadExtension(AppExtension ext)
         {
-            Debug.WriteLine("LoadExtension");
+            UnityEngine.Debug.Log("LoadExtension");
 
             // Build a unique identifier for this extension
             string identifier = ext.AppInfo.AppUserModelId + "!" + ext.Id;
@@ -234,10 +234,12 @@ namespace HoloLensExtensionSample
                 // get the extension's properties, such as its logo
                 var properties = await ext.GetExtensionPropertiesAsync() as PropertySet;
                 var filestream = await (ext.AppInfo.DisplayInfo.GetLogo(new Windows.Foundation.Size(1, 1))).OpenReadAsync();
-                BitmapImage logo = new BitmapImage();
-                logo.SetSource(filestream);
 
-                Extension newExtension = new Extension(ext, properties, logo);
+                // BitmapImage は利用出来ないためコメント
+                //BitmapImage logo = new BitmapImage();
+                //logo.SetSource(filestream);
+
+                Extension newExtension = new Extension(ext, properties);
                 Extensions.Add(newExtension);
 
                 await newExtension.MarkAsLoaded();
@@ -259,7 +261,7 @@ namespace HoloLensExtensionSample
         /// <returns></returns>
         public async Task LoadExtensions(Package package)
         {
-            Debug.WriteLine("LoadExtensions");
+            UnityEngine.Debug.Log("LoadExtensions");
 
             // Run on the UI thread because the Extensions Tab UI updates as extensions are added or removed
             await _dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
@@ -275,7 +277,7 @@ namespace HoloLensExtensionSample
         /// <returns></returns>
         public async Task UnloadExtensions(Package package)
         {
-            Debug.WriteLine("UnloadExtensions");
+            UnityEngine.Debug.Log("UnloadExtensions");
 
             // Run on the UI thread because the Extensions Tab UI updates as extensions are added or removed
             await _dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
@@ -292,7 +294,7 @@ namespace HoloLensExtensionSample
         /// <returns></returns>
         public async Task RemoveExtensions(Package package)
         {
-            Debug.WriteLine("RemoveExtensions");
+            UnityEngine.Debug.Log("RemoveExtensions");
 
             await _dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
             {
@@ -307,7 +309,7 @@ namespace HoloLensExtensionSample
         /// <param name="ext"></param>
         public async void RemoveExtension(Extension ext)
         {
-            Debug.WriteLine("RemoveExtension");
+            UnityEngine.Debug.Log("RemoveExtension");
 
             await _catalog.RequestRemovePackageAsync(ext.AppExtension.Package.Id.FullName);
         }
@@ -344,15 +346,15 @@ namespace HoloLensExtensionSample
         /// <param name="ext">The extension as represented by the system</param>
         /// <param name="properties">Properties about the extension</param>
         /// <param name="logo">The logo associated with the package that the extension is defined in</param>
-        public Extension(AppExtension ext, PropertySet properties, BitmapImage logo)
+        public Extension(AppExtension ext, PropertySet properties)
         {
             AppExtension = ext;
             _properties = properties;
             Enabled = false;
             Loaded = false;
             Offline = false;
-            Logo = logo;
-            Visible = Visibility.Collapsed;
+            //Logo = logo;
+            //Visible = Visibility.Collapsed;
 
             #region Properties
             _serviceName = null;
@@ -370,7 +372,7 @@ namespace HoloLensExtensionSample
         }
 
         #region Properties
-        public BitmapImage Logo { get; private set; }
+        //public BitmapImage Logo { get; private set; }
 
         public string UniqueId { get; private set; } // the unique id of this extension which will be AppUserModel Id + Extension ID
 
@@ -382,7 +384,7 @@ namespace HoloLensExtensionSample
 
         public AppExtension AppExtension { get; private set; }
 
-        public Visibility Visible { get; private set; } // Whether the extension should be visible in the list of extensions
+        //public Visibility Visible { get; private set; } // Whether the extension should be visible in the list of extensions
         #endregion
 
 
@@ -394,7 +396,7 @@ namespace HoloLensExtensionSample
         /// <param name="message">The parameters for the app service call</param>
         public async Task<double> Invoke(ValueSet message)
         {
-            Debug.WriteLine("***** Invoke *****");
+            UnityEngine.Debug.Log("***** Invoke *****");
 
             if (Loaded)
             {
@@ -408,11 +410,14 @@ namespace HoloLensExtensionSample
                         // package Family Name is provided by the extension
                         connection.PackageFamilyName = AppExtension.Package.Id.FamilyName;
 
+                        UnityEngine.Debug.Log("AppServiceName: " + connection.AppServiceName);
+                        UnityEngine.Debug.Log("PackageFamilyName: " + connection.PackageFamilyName);
+
                         // open the app service connection
                         AppServiceConnectionStatus status = await connection.OpenAsync();
                         if (status != AppServiceConnectionStatus.Success)
                         {
-                            Debug.WriteLine("Failed App Service Connection");
+                            UnityEngine.Debug.Log("Failed App Service Connection");
                         }
                         else
                         {
@@ -428,8 +433,8 @@ namespace HoloLensExtensionSample
                             }
                             else
                             {
-                                Debug.WriteLine("SendMessageAsync Failed.");
-                                Debug.WriteLine("Status: " + response.Status);
+                                UnityEngine.Debug.Log("SendMessageAsync Failed.");
+                                UnityEngine.Debug.Log("Status: " + response.Status);
                                 ValueSet answer = response.Message as ValueSet;
                             }
                         }
@@ -437,8 +442,8 @@ namespace HoloLensExtensionSample
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine("Calling the App Service failed");
-                    Debug.WriteLine(ex.Message);
+                    UnityEngine.Debug.Log("Calling the App Service failed");
+                    UnityEngine.Debug.Log(ex.Message);
                 }
             }
             return double.NaN; // indicates an error from the app service
@@ -451,7 +456,7 @@ namespace HoloLensExtensionSample
         /// <returns></returns>
         public async Task Update(AppExtension ext)
         {
-            Debug.WriteLine("Update");
+            UnityEngine.Debug.Log("Update");
 
             // ensure this is the same uid
             string identifier = ext.AppInfo.AppUserModelId + "!" + ext.Id;
@@ -463,14 +468,14 @@ namespace HoloLensExtensionSample
             var properties = await ext.GetExtensionPropertiesAsync() as PropertySet;
 
             // get the logo for the extension
-            var filestream = await (ext.AppInfo.DisplayInfo.GetLogo(new Windows.Foundation.Size(1, 1))).OpenReadAsync();
-            BitmapImage logo = new BitmapImage();
-            logo.SetSource(filestream);
+            //var filestream = await (ext.AppInfo.DisplayInfo.GetLogo(new Windows.Foundation.Size(1, 1))).OpenReadAsync();
+            //BitmapImage logo = new BitmapImage();
+            //logo.SetSource(filestream);
 
             // update the extension
             this.AppExtension = ext;
             _properties = properties;
-            Logo = logo;
+            //Logo = logo;
 
             #region Update Properties
             // update app service information
@@ -494,7 +499,7 @@ namespace HoloLensExtensionSample
         /// <returns></returns>
         public async Task MarkAsLoaded()
         {
-            Debug.WriteLine("MarkAsLoaded");
+            UnityEngine.Debug.Log("MarkAsLoaded");
 
             // make sure package is OK to load
             if (!AppExtension.Package.Status.VerifyIsOK())
@@ -515,8 +520,8 @@ namespace HoloLensExtensionSample
             //StorageFolder folder = await AppExtension.GetPublicFolderAsync();
 
             Loaded = true;
-            Visible = Visibility.Visible;
-            RaisePropertyChanged("Visible");
+            //Visible = Visibility.Visible;
+            //RaisePropertyChanged("Visible");
             Offline = false;
         }
 
@@ -526,7 +531,7 @@ namespace HoloLensExtensionSample
         /// <returns></returns>
         public async Task Enable()
         {
-            Debug.WriteLine("Enable");
+            UnityEngine.Debug.Log("Enable");
 
             Enabled = true;
             await MarkAsLoaded();
@@ -537,7 +542,7 @@ namespace HoloLensExtensionSample
         /// </summary>
         public void Unload()
         {
-            Debug.WriteLine("Unload");
+            UnityEngine.Debug.Log("Unload");
 
             // unload it
             lock (_sync) // Calls to this functioned are queued on an await call so lock to handle one at a time
@@ -551,8 +556,8 @@ namespace HoloLensExtensionSample
                     }
 
                     Loaded = false;
-                    Visible = Visibility.Collapsed;
-                    RaisePropertyChanged("Visible");
+                    //Visible = Visibility.Collapsed;
+                    //RaisePropertyChanged("Visible");
                 }
             }
         }
@@ -560,7 +565,7 @@ namespace HoloLensExtensionSample
         // user-facing action to disable the extension
         public void Disable()
         {
-            Debug.WriteLine("Disable");
+            UnityEngine.Debug.Log("Disable");
 
             // only disable if it is enabled so that we don't Unload() more than once
             if (Enabled)
