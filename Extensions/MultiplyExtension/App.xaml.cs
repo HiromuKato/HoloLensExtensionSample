@@ -1,18 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
+using System;
+using System.Diagnostics;
 using Windows.ApplicationModel;
 using Windows.ApplicationModel.Activation;
-using Windows.Foundation;
+using Windows.ApplicationModel.AppService;
+using Windows.ApplicationModel.Background;
 using Windows.Foundation.Collections;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml.Controls.Primitives;
-using Windows.UI.Xaml.Data;
-using Windows.UI.Xaml.Input;
-using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
 
 namespace MultiplyExtension
@@ -22,6 +19,10 @@ namespace MultiplyExtension
     /// </summary>
     sealed partial class App : Application
     {
+        private bool _appServiceInitialized = false;
+        private AppServiceConnection _appServiceConnection;
+        private BackgroundTaskDeferral _appServiceDeferral;
+
         /// <summary>
         ///単一アプリケーション オブジェクトを初期化します。これは、実行される作成したコードの
         ///最初の行であるため、論理的には main() または WinMain() と等価です。
@@ -95,6 +96,95 @@ namespace MultiplyExtension
             var deferral = e.SuspendingOperation.GetDeferral();
             //TODO: アプリケーションの状態を保存してバックグラウンドの動作があれば停止します
             deferral.Complete();
+        }
+
+        /// <summary>
+        /// Called whenever the app service is activated
+        /// </summary>
+        /// <param name="args"></param>
+        protected override void OnBackgroundActivated(BackgroundActivatedEventArgs args)
+        {
+            base.OnBackgroundActivated(args);
+
+            // サンプルでは毎回コネクションがクローズされる実装になっているため、
+            // 以下をコメントしておかないと初回しか正常に動作しない
+            //if (_appServiceInitialized == false) // Only need to setup the handlers once
+            {
+                _appServiceInitialized = true;
+
+                IBackgroundTaskInstance taskInstance = args.TaskInstance;
+                taskInstance.Canceled += OnAppServicesCanceled;
+
+                AppServiceTriggerDetails appService = taskInstance.TriggerDetails as AppServiceTriggerDetails;
+                _appServiceDeferral = taskInstance.GetDeferral();
+                _appServiceConnection = appService.AppServiceConnection;
+                _appServiceConnection.RequestReceived += OnAppServiceRequestReceived;
+                _appServiceConnection.ServiceClosed += AppServiceConnection_ServiceClosed;
+            }
+        }
+
+        /// <summary>
+        /// The handler for app service calls
+        /// This extension provides the exponent function. Extensions can provide more
+        /// than one function. You could send a "command" argument in args.Request.Message
+        /// to identify the function to carry out.
+        /// </summary>
+        /// <param name="sender">Contains details about the app connection</param>
+        /// <param name="args">Contains arguments for the app service and the deferral object</param>
+        private async void OnAppServiceRequestReceived(AppServiceConnection sender, AppServiceRequestReceivedEventArgs args)
+        {
+            // Get a deferral because we use an awaitable API below (SendResponseAsync()) to respond to the message
+            // and we don't want this call to get cancelled while we are waiting.
+            AppServiceDeferral messageDeferral = args.GetDeferral();
+            ValueSet message = args.Request.Message;
+            ValueSet returnMessage = new ValueSet();
+
+            double? arg1 = Convert.ToDouble(message["arg1"]);
+            double? arg2 = Convert.ToDouble(message["arg2"]);
+            if (arg1.HasValue && arg2.HasValue)
+            {
+                // 累乗の計算を行う
+                //returnMessage.Add("Result", Math.Pow(arg1.Value, arg2.Value)); // For this sample, the presence of a "Result" key will mean the call succeeded
+
+                // 掛け算を行う
+                var ret = arg1.Value * arg2.Value;
+                returnMessage.Add("Result", ret);
+            }
+
+            try
+            {
+                await args.Request.SendResponseAsync(returnMessage);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+            finally
+            {
+                messageDeferral.Complete();
+            }
+        }
+
+        /// <summary>
+        /// Called if the system is going to cancel the app service because resources it needs to reclaim resources
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="reason"></param>
+        private void OnAppServicesCanceled(IBackgroundTaskInstance sender, BackgroundTaskCancellationReason reason)
+        {
+            Debug.WriteLine("OnAppServicesCanceled");
+            _appServiceDeferral.Complete();
+        }
+
+        /// <summary>
+        /// Called when the caller closes the connection to the app service
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="args"></param>
+        private void AppServiceConnection_ServiceClosed(AppServiceConnection sender, AppServiceClosedEventArgs args)
+        {
+            Debug.WriteLine("AppServiceConnection_ServiceClosed");
+            _appServiceDeferral.Complete();
         }
     }
 }
