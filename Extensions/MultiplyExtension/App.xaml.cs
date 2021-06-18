@@ -19,7 +19,6 @@ namespace MultiplyExtension
     /// </summary>
     sealed partial class App : Application
     {
-        private bool _appServiceInitialized = false;
         private AppServiceConnection _appServiceConnection;
         private BackgroundTaskDeferral _appServiceDeferral;
 
@@ -106,21 +105,17 @@ namespace MultiplyExtension
         {
             base.OnBackgroundActivated(args);
 
-            // サンプルでは毎回コネクションがクローズされる実装になっているため、
-            // 以下をコメントしておかないと初回しか正常に動作しない
-            //if (_appServiceInitialized == false) // Only need to setup the handlers once
-            {
-                _appServiceInitialized = true;
+            IBackgroundTaskInstance taskInstance = args.TaskInstance;
+            // 毎回インスタンスが異なっている
+            System.Diagnostics.Debug.WriteLine(taskInstance.GetHashCode());
 
-                IBackgroundTaskInstance taskInstance = args.TaskInstance;
-                taskInstance.Canceled += OnAppServicesCanceled;
+            taskInstance.Canceled += OnAppServicesCanceled;
 
-                AppServiceTriggerDetails appService = taskInstance.TriggerDetails as AppServiceTriggerDetails;
-                _appServiceDeferral = taskInstance.GetDeferral();
-                _appServiceConnection = appService.AppServiceConnection;
-                _appServiceConnection.RequestReceived += OnAppServiceRequestReceived;
-                _appServiceConnection.ServiceClosed += AppServiceConnection_ServiceClosed;
-            }
+            AppServiceTriggerDetails appService = taskInstance.TriggerDetails as AppServiceTriggerDetails;
+            _appServiceDeferral = taskInstance.GetDeferral();
+            _appServiceConnection = appService.AppServiceConnection;
+            _appServiceConnection.RequestReceived += OnAppServiceRequestReceived;
+            _appServiceConnection.ServiceClosed += AppServiceConnection_ServiceClosed;
         }
 
         /// <summary>
